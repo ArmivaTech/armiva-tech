@@ -1,109 +1,87 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
-
-// The spritesheet has 5 frames arranged in a 3x2 grid:
-// [front] [left]  [right]
-// [up]    [down]  (empty)
-// Each frame is 1/3 of width, 1/2 of height
-
-type Frame = 'front' | 'left' | 'right' | 'up' | 'down'
-
-const FRAME_POSITIONS: Record<Frame, { col: number; row: number }> = {
-  front: { col: 0, row: 0 },
-  left:  { col: 1, row: 0 },
-  right: { col: 2, row: 0 },
-  up:    { col: 0, row: 1 },
-  down:  { col: 1, row: 1 },
-}
-
-function getFrame(cx: number, cy: number, rect: DOMRect): Frame {
-  const rx = (cx - rect.left) / rect.width  - 0.5  // -0.5..0.5
-  const ry = (cy - rect.top)  / rect.height - 0.5  // -0.5..0.5
-
-  const absX = Math.abs(rx)
-  const absY = Math.abs(ry)
-
-  // Dead zone — look straight if cursor is near centre
-  if (absX < 0.15 && absY < 0.12) return 'front'
-
-  if (absY > absX) {
-    return ry < 0 ? 'up' : 'down'
-  }
-  return rx < 0 ? 'left' : 'right'
-}
+import { useEffect, useRef } from 'react'
 
 export default function RobotTracker() {
+  const videoRef = useRef<HTMLVideoElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const [frame, setFrame] = useState<Frame>('front')
-  const [loaded, setLoaded] = useState(false)
   const rafRef = useRef<number>()
-  const mouseRef = useRef({ x: -9999, y: -9999 })
-
-  const onMouseMove = useCallback((e: MouseEvent) => {
-    mouseRef.current = { x: e.clientX, y: e.clientY }
-  }, [])
+  const mouseX = useRef(0.5)
+  const currentTime = useRef(0)
 
   useEffect(() => {
-    window.addEventListener('mousemove', onMouseMove)
+    const video = videoRef.current
+    if (!video) return
+
+    // Mute and pause — we control playback manually
+    video.muted = true
+    video.pause()
+    video.currentTime = 0
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!containerRef.current) return
+      const rect = containerRef.current.getBoundingClientRect()
+      // Normalize cursor X position across the whole viewport: 0 (left) → 1 (right)
+      mouseX.current = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+    }
 
     const tick = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        const f = getFrame(mouseRef.current.x, mouseRef.current.y, rect)
-        setFrame(prev => prev !== f ? f : prev)
+      const video = videoRef.current
+      if (video && video.duration) {
+        const target = mouseX.current * video.duration
+        // Smooth interpolation toward target time
+        currentTime.current += (target - currentTime.current) * 0.08
+        video.currentTime = currentTime.current
       }
       rafRef.current = requestAnimationFrame(tick)
     }
+
+    window.addEventListener('mousemove', onMouseMove)
     rafRef.current = requestAnimationFrame(tick)
 
     return () => {
       window.removeEventListener('mousemove', onMouseMove)
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
     }
-  }, [onMouseMove])
-
-  const fp = FRAME_POSITIONS[frame]
-  // Each frame occupies 1/3 width, 1/2 height of the spritesheet
-  const bgX = fp.col * (100 / 2)   // percentage offset X (3 cols → step = 33.33%)
-  const bgY = fp.row * 100         // percentage offset Y (2 rows → step = 100%)
+  }, [])
 
   return (
     <div
       ref={containerRef}
       style={{
-        position: 'relative',
         width: '100%',
         height: '100%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        position: 'relative',
       }}
     >
-      {/* Robot image using background-position to show correct frame */}
-      <div
+      {/* Glow effect */}
+      <div style={{
+        position: 'absolute',
+        width: '350px',
+        height: '350px',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(123,47,255,.12) 0%, rgba(47,142,255,.06) 50%, transparent 70%)',
+        pointerEvents: 'none',
+        zIndex: 0,
+      }} />
+      <video
+        ref={videoRef}
+        src="/robot/robot.mp4"
+        muted
+        playsInline
+        preload="auto"
         style={{
           width: '420px',
-          height: '520px',
           maxWidth: '90vw',
-          backgroundImage: 'url(/robot/spritesheet.jpg)',
-          backgroundSize: '300% 200%',
-          backgroundPosition: `${fp.col * 50}% ${fp.row * 100}%`,
-          backgroundRepeat: 'no-repeat',
-          transition: 'background-position .12s cubic-bezier(.22,.61,.25,1)',
-          opacity: loaded ? 1 : 0,
-          transform: `scale(${loaded ? 1 : 0.95})`,
-          transitionProperty: 'background-position, opacity, transform',
+          height: 'auto',
+          position: 'relative',
+          zIndex: 1,
+          pointerEvents: 'none',
+          userSelect: 'none',
         }}
-        onLoad={() => setLoaded(true)}
-      />
-      {/* Preload trigger */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/robot/spritesheet.jpg"
-        alt=""
-        style={{ display: 'none' }}
-        onLoad={() => setLoaded(true)}
       />
     </div>
   )

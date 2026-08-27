@@ -6,7 +6,7 @@
 }
 .scrolled {
   padding: 14px 0;
-  background: rgba(9,9,11,.75);
+  background: rgba(255,255,255,.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom-color: var(--line);
@@ -15,16 +15,16 @@
   display: flex; align-items: center; justify-content: space-between; gap: 32px;
 }
 .brand {
-  font-size: 20px; font-weight: 700; letter-spacing: -.03em; color: var(--fg);
+  font-size: 18px; font-weight: 700; letter-spacing: -.03em; color: var(--fg);
   display: flex; align-items: baseline; gap: 2px;
 }
 .brandA {
   background: var(--grad);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  font-size: 22px;
+  font-size: 20px;
 }
 .brandDot {
-  font-size: 12px; font-weight: 400; color: var(--fg-60); margin-left: 4px; letter-spacing: .02em;
+  font-size: 11px; font-weight: 400; color: var(--fg-30); margin-left: 4px; letter-spacing: .02em;
 }
 .links {
   display: flex; align-items: center; gap: 36px; list-style: none;
@@ -37,7 +37,7 @@
 .link:hover { color: var(--fg); }
 .link::after {
   content: ''; position: absolute; left: 0; right: 0; bottom: -2px; height: 1px;
-  background: var(--grad); transform: scaleX(0); transform-origin: right;
+  background: var(--fg); transform: scaleX(0); transform-origin: right;
   transition: transform .35s var(--ease-out);
 }
 .link:hover::after { transform: scaleX(1); transform-origin: left; }
@@ -48,7 +48,6 @@
   display: none; flex-direction: column; gap: 5px;
   width: 40px; height: 40px; align-items: center; justify-content: center;
   border: 1px solid var(--line); border-radius: 50%;
-  background: var(--fg-05);
 }
 .burger span {
   display: block; width: 16px; height: 1px; background: var(--fg);
@@ -69,7 +68,7 @@
 .mobileOpen { transform: none; opacity: 1; pointer-events: auto; }
 .mobileLink {
   font-size: clamp(36px, 8vw, 64px); font-weight: 700; letter-spacing: -.03em;
-  color: var(--fg-60); padding: 8px 0;
+  color: var(--fg-30); padding: 8px 0;
   transition: color .3s var(--ease);
 }
 .mobileLink:hover { color: var(--fg); }
